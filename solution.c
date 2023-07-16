@@ -14,15 +14,14 @@ struct args {
 
 void *consumer(void *thread_args) {
   struct args *actual_args = thread_args;
-  // while (1) {
-  // continue;
-  // sem_wait(actual_args->full);
-  // sem_wait(actual_args->mutex);
-  // printf("%s\n", actual_args->buffer);
-  // actual_args->buffer[0] = '\0';
-  // sem_post(actual_args->mutex);
-  // sem_post(actual_args->empty);
-  // }
+  while (1) {
+    sem_wait(actual_args->full);
+    sem_wait(actual_args->mutex);
+    printf("%s\n", actual_args->buffer);
+    actual_args->buffer[0] = '\0';
+    sem_post(actual_args->mutex);
+    sem_post(actual_args->empty);
+  }
   return NULL;
 }
 
@@ -30,12 +29,11 @@ void *producer(void *thread_args) {
   struct args *actual_args = thread_args;
   int status;
   while (1) {
-    // sem_wait(actual_args->empty);
+    sem_wait(actual_args->empty);
     status = sem_wait(actual_args->mutex);
-    printf("hello\n");
     strcat(actual_args->buffer, "d");
-    // sem_post(actual_args->full);
-    // sem_post(actual_args->mutex);
+    sem_post(actual_args->full);
+    sem_post(actual_args->mutex);
   }
   return NULL;
 }
@@ -44,9 +42,13 @@ int main() {
   pthread_t con, prod;
   int status_con, status_prod;
   char buffer[BUFFSIZE];
-  sem_t *full = sem_open("full", O_CREAT, 0660, 0);
-  sem_t *empty = sem_open("empty", O_CREAT, 0660, BUFFSIZE - 1);
-  sem_t *mutex = sem_open("mutex", O_CREAT, 0660, 1);
+
+  sem_unlink("full");
+  sem_unlink("empty");
+  sem_unlink("mutex");
+  sem_t *full = sem_open("full", O_CREAT, 7777, 0);
+  sem_t *empty = sem_open("empty", O_CREAT, 7777, BUFFSIZE - 1);
+  sem_t *mutex = sem_open("mutex", O_CREAT, 7777, 1);
 
   struct args arguements = {buffer, full, empty, mutex};
 
